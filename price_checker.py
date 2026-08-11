@@ -437,10 +437,21 @@ RU_KNIVES = {
     "нож-бабочка": "Butterfly Knife",
     "крюк-нож": "Kukri Knife",
     "нож-кукри": "Kukri Knife",
+    "кукри-нож": "Kukri Knife",
     "когти-нож": "Talon Knife",
     "коготь-нож": "Talon Knife",
+    "тычковые ножи": "Stiletto Knife",
+    "тычковый нож": "Stiletto Knife",
     "стилет-нож": "Stiletto Knife",
     "стилет": "Stiletto Knife",
+    "складной нож": "Flip Knife",
+    "кинжалы-бабочки": "Shadow Daggers",
+    "кинжал-бабочка": "Shadow Daggers",
+    "теневые кинжалы": "Shadow Daggers",
+    "нож-наваха": "Navaja Knife",
+    "наваха": "Navaja Knife",
+    "медвежий нож": "Ursus Knife",
+    "нож-тесак": "Bowie Knife",
     "штык-нож м9": "M9 Bayonet",
     "штык-нож": "Bayonet",
     "охотничий нож": "Hunting Knife",
@@ -452,6 +463,7 @@ RU_KNIVES = {
     "нож-лук": "Navaja Knife",
     "скелетон-нож": "Skeleton Knife",
     "нож-скелетон": "Skeleton Knife",
+    "скелетон нож": "Skeleton Knife",
     "классический кинжал": "Classic Knife",
     "фехтовальщик": "Falchion Knife",
     "кунг-фу": "Falchion Knife",
@@ -481,6 +493,7 @@ RU_PATTERNS = {
     "бойня": "Slaughter",
     "тигриный зуб": "Tiger Tooth",
     "мраморный градиент": "Marble Fade",
+    "мрамор": "Marble Fade",
     "марбл фад": "Marble Fade",
     "предание": "Lore",
     "гамма-доплер": "Gamma Doppler",
@@ -499,6 +512,8 @@ RU_PATTERNS = {
     "рж авый": "Rust Coat",
     "светлая вода": "Bright Water",
     "сафари": "Safari Mesh",
+    "африканская сетка": "Safari Mesh",
+    "африканская": "Safari Mesh",
     "маскировка": "Forest DDPAT",
     "джангл": "Jungle DDPAT",
     "бурый след": "DDPAT",
@@ -552,6 +567,7 @@ RU_PATTERNS = {
     "голубая молния": "Lightning Strike",
     "удар молнии": "Lightning Strike",
     "гипербит": "Hyper Beast",
+    "гипербист": "Hyper Beast",
     "гипер-зверь": "Hyper Beast",
     "зверь": "Hyper Beast",
     "извилистая": "Hot Rod",
@@ -568,9 +584,12 @@ RU_GUNS = {
     "м4а4": "M4A4",
     "пустынный орёл": "Desert Eagle",
     "дезерт игл": "Desert Eagle",
+    "десерт игл": "Desert Eagle",
     "дигл": "Desert Eagle",
     "дегл": "Desert Eagle",
     "усп": "USP-S",
+    "снайперка": "AWP",
+    "снайперская": "AWP",
     "глок": "Glock-18",
     "фамас": "FAMAS",
     "галиль": "Galil AR",
@@ -587,12 +606,59 @@ RU_MISC = {
     "(после полевых испытаний)": "",
 }
 
+RU_GUNS_LATIN = {
+    "usp": "USP-S",
+    "deagle": "Desert Eagle",
+    "deag": "Desert Eagle",
+}
+
+
+def _sub_all_word(text: str, table: dict[str, str]) -> str:
+    low = _canon(text)
+    for ru, en in sorted(table.items(), key=lambda kv: len(kv[0]), reverse=True):
+        pos = low.find(_canon(ru))
+        if pos == -1:
+            continue
+        before = low[pos - 1] if pos > 0 else " "
+        after = low[pos + len(ru)] if pos + len(ru) < len(low) else " "
+        if before.isalnum() or before == "-" or after.isalnum() or after == "-":
+            continue
+        text = text[:pos] + en + text[pos + len(ru) :]
+        low = _canon(text)
+    return text
+
+RU_DICT_PATH = APP_DIR / "ru_dict.json"
+
+
+def _load_generated_patterns() -> dict[str, str]:
+    try:
+        with RU_DICT_PATH.open("r", encoding="utf-8") as f:
+            data = json.load(f)
+        return {str(k).lower(): str(v) for k, v in data.items()}
+    except (OSError, ValueError):
+        return {}
+
+
+GENERATED_PATTERNS = _load_generated_patterns()
+ALL_PATTERNS = {**GENERATED_PATTERNS, **RU_PATTERNS}
+
+
+_HOMOGLYPHS = str.maketrans(
+    "аеёорсухкмтвнАЕЁОРСУХКМТВН",
+    "aeeopcyxkmtbnaeeopcyxkmtbn",
+)
+
+def _canon(s: str) -> str:
+    return s.translate(_HOMOGLYPHS).lower()
+
 
 def _sub_all(text: str, table: dict[str, str]) -> str:
-    low = text.lower()
-    for ru, en in table.items():
-        if ru.lower() in low:
-            text = re.sub(re.escape(ru), en, text, flags=re.IGNORECASE)
+    low = _canon(text)
+    for ru, en in sorted(table.items(), key=lambda kv: len(kv[0]), reverse=True):
+        pos = low.find(_canon(ru))
+        if pos != -1:
+            text = text[:pos] + en + text[pos + len(ru) :]
+            low = _canon(text)
     return text
 
 
@@ -600,11 +666,15 @@ def ru_to_en(query: str) -> str:
     q = re.sub(r"\s+", " ", query.strip())
     translated = _sub_all(q, RU_WEAR)
     translated = _sub_all(translated, RU_GUNS)
-    for ru, en in RU_KNIVES.items():
-        if ru.lower() in translated.lower():
-            translated = re.sub(re.escape(ru), en, translated, flags=re.IGNORECASE)
+    translated = _sub_all_word(translated, RU_GUNS_LATIN)
+    low = _canon(translated)
+    for ru, en in sorted(RU_KNIVES.items(), key=lambda kv: len(kv[0]), reverse=True):
+        pos = low.find(_canon(ru))
+        if pos != -1:
+            translated = translated[:pos] + en + translated[pos + len(ru) :]
             break
-    translated = _sub_all(translated, RU_PATTERNS)
+    translated = _sub_all(translated, ALL_PATTERNS)
+    translated = _sub_all(translated, RU_MISC)
     return re.sub(r"\s+", " ", translated).strip()
 
 

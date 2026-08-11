@@ -49,6 +49,9 @@ jobs:
           echo "action=$ACTION" >> "$GITHUB_OUTPUT"
           echo "query=$QUERY" >> "$GITHUB_OUTPUT"
 
+      - name: Build RU dictionary
+        run: python build_ru_dict.py
+
       - name: Run price checker
         run: |
           ACTION="${{ steps.action.outputs.action }}"
@@ -63,13 +66,13 @@ jobs:
 
       - name: Commit price data
         run: |
-          if git diff --quiet -- prices.json state.json search_index.tsv; then
+          if git diff --quiet -- prices.json state.json search_index.tsv ru_dict.json; then
             echo "No changes to save."
             exit 0
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -f prices.json state.json search_index.tsv
+          git add -f prices.json state.json search_index.tsv ru_dict.json
           git commit -m "Update CS2 prices and notifier state"
           git push || {
             git fetch origin main

@@ -5,6 +5,7 @@
 // to https://<worker-name>.<your-subdomain>.workers.dev
 
 const GITHUB_RAW = 'https://raw.githubusercontent.com/spikeshowglhf-max/cs2-skin-pricer/main/search_index.tsv';
+const GITHUB_DICT = 'https://raw.githubusercontent.com/spikeshowglhf-max/cs2-skin-pricer/main/ru_dict.json';
 const STEAM_SEARCH = 'https://steamcommunity.com/market/search/render/?query={q}&appid=730&norender=1&count=8';
 const STEAM_ICON = 'https://community.fastly.steamstatic.com/economy/image/{url}';
 
@@ -46,6 +47,16 @@ const RU_KNIVES = {
   'нож-кукри': 'Kukri Knife',
   'когти-нож': 'Talon Knife',
   'коготь-нож': 'Talon Knife',
+  'тычковые ножи': 'Stiletto Knife',
+  'тычковый нож': 'Stiletto Knife',
+  'складной нож': 'Flip Knife',
+  'кинжалы-бабочки': 'Shadow Daggers',
+  'кинжал-бабочка': 'Shadow Daggers',
+  'теневые кинжалы': 'Shadow Daggers',
+  'нож-наваха': 'Navaja Knife',
+  'наваха': 'Navaja Knife',
+  'медвежий нож': 'Ursus Knife',
+  'нож-тесак': 'Bowie Knife',
   'стилет-нож': 'Stiletto Knife',
   'стилет': 'Stiletto Knife',
   'штык-нож м9': 'M9 Bayonet',
@@ -59,6 +70,7 @@ const RU_KNIVES = {
   'нож-лук': 'Navaja Knife',
   'скелетон-нож': 'Skeleton Knife',
   'нож-скелетон': 'Skeleton Knife',
+  'скелетон нож': 'Skeleton Knife',
   'классический кинжал': 'Classic Knife',
   'фехтовальщик': 'Falchion Knife',
   'кунг-фу': 'Falchion Knife',
@@ -88,6 +100,7 @@ const RU_PATTERNS = {
   'бойня': 'Slaughter',
   'тигриный зуб': 'Tiger Tooth',
   'мраморный градиент': 'Marble Fade',
+  'мрамор': 'Marble Fade',
   'марбл фад': 'Marble Fade',
   'предание': 'Lore',
   'гамма-доплер': 'Gamma Doppler',
@@ -106,6 +119,8 @@ const RU_PATTERNS = {
   'рж авый': 'Rust Coat',
   'светлая вода': 'Bright Water',
   'сафари': 'Safari Mesh',
+  'африканская сетка': 'Safari Mesh',
+  'африканская': 'Safari Mesh',
   'маскировка': 'Forest DDPAT',
   'джангл': 'Jungle DDPAT',
   'бурый след': 'DDPAT',
@@ -159,6 +174,7 @@ const RU_PATTERNS = {
   'голубая молния': 'Lightning Strike',
   'удар молнии': 'Lightning Strike',
   'гипербит': 'Hyper Beast',
+  'гипербист': 'Hyper Beast',
   'гипер-зверь': 'Hyper Beast',
   'зверь': 'Hyper Beast',
   'извилистая': 'Hot Rod',
@@ -175,9 +191,12 @@ const RU_GUNS = {
   'м4а4': 'M4A4',
   'пустынный орёл': 'Desert Eagle',
   'дезерт игл': 'Desert Eagle',
+  'десерт игл': 'Desert Eagle',
   'дигл': 'Desert Eagle',
   'дегл': 'Desert Eagle',
   'усп': 'USP-S',
+  'снайперка': 'AWP',
+  'снайперская': 'AWP',
   'глок': 'Glock-18',
   'фамас': 'FAMAS',
   'галиль': 'Galil AR',
@@ -188,11 +207,50 @@ const RU_GUNS = {
   'автопушка': 'AWP',
 };
 
+const HOMOGLYPHS = {
+  'а': 'a', 'е': 'e', 'ё': 'e', 'о': 'o', 'р': 'p', 'с': 'c', 'у': 'y',
+  'х': 'x', 'к': 'k', 'м': 'm', 'т': 't', 'в': 'b', 'н': 'n',
+  'А': 'a', 'Е': 'e', 'Ё': 'e', 'О': 'o', 'Р': 'p', 'С': 'c', 'У': 'y',
+  'Х': 'x', 'К': 'k', 'М': 'm', 'Т': 't', 'В': 'b', 'Н': 'n',
+};
+
+function canon(s) {
+  return s
+    .split('')
+    .map((ch) => HOMOGLYPHS[ch] || ch)
+    .join('')
+    .toLowerCase();
+}
+
+const RU_GUNS_LATIN = {
+  'usp': 'USP-S',
+  'deagle': 'Desert Eagle',
+  'deag': 'Desert Eagle',
+};
+
+function subAllWord(text, table) {
+  let low = canon(text);
+  const entries = Object.entries(table).sort((a, b) => b[0].length - a[0].length);
+  for (const [ru, en] of entries) {
+    const pos = low.indexOf(canon(ru));
+    if (pos === -1) continue;
+    const before = pos > 0 ? low[pos - 1] : ' ';
+    const after = pos + ru.length < low.length ? low[pos + ru.length] : ' ';
+    if (/[a-z0-9-]/.test(before) || /[a-z0-9-]/.test(after)) continue;
+    text = text.slice(0, pos) + en + text.slice(pos + ru.length);
+    low = canon(text);
+  }
+  return text;
+}
+
 function subAll(text, table) {
-  const low = text.toLowerCase();
-  for (const [ru, en] of Object.entries(table)) {
-    if (low.includes(ru.toLowerCase())) {
-      text = text.replace(new RegExp(escapeRegex(ru), 'gi'), en);
+  let low = canon(text);
+  const entries = Object.entries(table).sort((a, b) => b[0].length - a[0].length);
+  for (const [ru, en] of entries) {
+    const pos = low.indexOf(canon(ru));
+    if (pos !== -1) {
+      text = text.slice(0, pos) + en + text.slice(pos + ru.length);
+      low = canon(text);
     }
   }
   return text;
@@ -202,17 +260,20 @@ function escapeRegex(s) {
   return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
-function ruToEn(query) {
+function ruToEn(query, patterns) {
   let q = query.trim().replace(/\s+/g, ' ');
   q = subAll(q, RU_WEAR);
   q = subAll(q, RU_GUNS);
+  q = subAllWord(q, RU_GUNS_LATIN);
+  let lowK = canon(q);
   for (const [ru, en] of Object.entries(RU_KNIVES)) {
-    if (q.toLowerCase().includes(ru.toLowerCase())) {
-      q = q.replace(new RegExp(escapeRegex(ru), 'gi'), en);
+    const pos = lowK.indexOf(canon(ru));
+    if (pos !== -1) {
+      q = q.slice(0, pos) + en + q.slice(pos + ru.length);
       break;
     }
   }
-  q = subAll(q, RU_PATTERNS);
+  q = subAll(q, patterns || RU_PATTERNS);
   return q.trim().replace(/\s+/g, ' ');
 }
 
@@ -220,8 +281,8 @@ function hasCyrillic(s) {
   return /[а-яА-ЯёЁ]/.test(s);
 }
 
-function normalizeQuery(query, wear) {
-  let q = ruToEn(query);
+function normalizeQuery(query, wear, patterns) {
+  let q = ruToEn(query, patterns);
   if (!wear) {
     const tokens = q.toLowerCase().match(/(?<![a-zа-я])[a-zа-я]{1,4}(?![a-zа-я])/g) || [];
     for (const tok of tokens) {
@@ -245,6 +306,7 @@ function normalizeQuery(query, wear) {
 // ---- data ----
 
 let indexCache = { text: null, at: 0 };
+let dictCache = { table: null, at: 0 };
 
 async function getIndexText() {
   const now = Date.now();
@@ -258,6 +320,25 @@ async function getIndexText() {
   const text = await res.text();
   indexCache = { text, at: now };
   return text;
+}
+
+async function getRuDict() {
+  const now = Date.now();
+  if (dictCache.table !== null && now - dictCache.at < 15 * 60 * 1000) {
+    return dictCache.table;
+  }
+  let generated = {};
+  try {
+    const res = await fetch(`${GITHUB_DICT}?t=${now}`, {
+      headers: { 'User-Agent': 'cs2-skin-pricer-worker' },
+    });
+    if (res.ok) generated = await res.json();
+  } catch {
+    generated = {};
+  }
+  const table = { ...generated, ...RU_PATTERNS };
+  dictCache = { table, at: now };
+  return table;
 }
 
 function searchIndex(query) {
@@ -358,7 +439,8 @@ function buildEmbed(name, entry) {
 }
 
 async function doSearch(query, wear) {
-  const qnorm = normalizeQuery(query, wear);
+  const patterns = await getRuDict();
+  const qnorm = normalizeQuery(query, wear, patterns);
   if (hasCyrillic(qnorm)) return { qnorm, results: [] };
   await getIndexText();
   let cs = searchIndex(qnorm);
