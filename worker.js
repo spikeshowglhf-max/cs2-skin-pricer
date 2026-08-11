@@ -45,6 +45,8 @@ const RU_KNIVES = {
   'нож-бабочка': 'Butterfly Knife',
   'крюк-нож': 'Kukri Knife',
   'нож-кукри': 'Kukri Knife',
+  'кукри-нож': 'Kukri Knife',
+  'кукри': 'Kukri Knife',
   'когти-нож': 'Talon Knife',
   'коготь-нож': 'Talon Knife',
   'тычковые ножи': 'Stiletto Knife',
@@ -121,6 +123,7 @@ const RU_PATTERNS = {
   'сафари': 'Safari Mesh',
   'африканская сетка': 'Safari Mesh',
   'африканская': 'Safari Mesh',
+  'королевские консорты': 'Royal Consorts',
   'маскировка': 'Forest DDPAT',
   'джангл': 'Jungle DDPAT',
   'бурый след': 'DDPAT',
@@ -133,12 +136,15 @@ const RU_PATTERNS = {
   'джайпур': 'Jaipur',
   'смеш': 'Sport Gloves',
   'спортивные перчатки': 'Sport Gloves',
+  'перчатки спортивные': 'Sport Gloves',
   'перчатки мотор': 'Motivational Gloves',
+  'моторные перчатки': 'Motivational Gloves',
   'кованые перчатки': 'Wraps',
   'плетёные перчатки': 'Wraps',
   'перчатки-обмотки': 'Wraps',
   'спецрезерв': 'Specialist Gloves',
   'перчатки специалиста': 'Specialist Gloves',
+  'кровавого давления': 'Bloodhound Gloves',
   'четыре гаечных': 'Hand Wraps',
   'повязки': 'Hand Wraps',
   'перчатки кровавого давления': 'Bloodhound Gloves',
@@ -737,6 +743,8 @@ export default {
 };
 
 export const _test = {
+  ruToEn,
+  doSearch,
   normalizeQuery,
   searchIndex,
   setIndexText: (t) => {
