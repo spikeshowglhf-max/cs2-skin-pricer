@@ -187,24 +187,87 @@ const RU_GUNS = {
   'ак-47': 'AK-47',
   'ак47': 'AK-47',
   'калаш': 'AK-47',
+  'калашников': 'AK-47',
+  'автомат': 'AK-47',
   'авп': 'AWP',
+  'авик': 'AWP',
+  'снайперка': 'AWP',
+  'снайперская': 'AWP',
   'м4а4': 'M4A4',
+  'м4': 'M4A4',
+  'м4а1': 'M4A1-S',
+  'м4а1-с': 'M4A1-S',
+  'м4а1с': 'M4A1-S',
+  'м4а1-s': 'M4A1-S',
   'пустынный орёл': 'Desert Eagle',
   'дезерт игл': 'Desert Eagle',
   'десерт игл': 'Desert Eagle',
   'дигл': 'Desert Eagle',
   'дегл': 'Desert Eagle',
   'усп': 'USP-S',
-  'снайперка': 'AWP',
-  'снайперская': 'AWP',
   'глок': 'Glock-18',
+  'глок-18': 'Glock-18',
   'фамас': 'FAMAS',
   'галиль': 'Galil AR',
+  'галил': 'Galil AR',
   'маг-7': 'MAG-7',
+  'маг7': 'MAG-7',
   'п90': 'P90',
-  'нэгвар': 'Negev',
+  'негев': 'Negev',
+  'нэгев': 'Negev',
   'ск20': 'SCAR-20',
+  'скар': 'SCAR-20',
+  'скар-20': 'SCAR-20',
   'автопушка': 'AWP',
+  'ауг': 'AUG',
+  'авг': 'AUG',
+  'сг553': 'SG 553',
+  'сг-553': 'SG 553',
+  'ссг': 'SSG 08',
+  'ссг08': 'SSG 08',
+  'ссг-08': 'SSG 08',
+  'г3сг1': 'G3SG1',
+  'г3': 'G3SG1',
+  'мп9': 'MP9',
+  'эмп9': 'MP9',
+  'мп7': 'MP7',
+  'эмп7': 'MP7',
+  'мп5': 'MP5-SD',
+  'эмп5': 'MP5-SD',
+  'мп5-сд': 'MP5-SD',
+  'мп5сд': 'MP5-SD',
+  'мак-10': 'MAC-10',
+  'мак10': 'MAC-10',
+  'макаров': 'MAC-10',
+  'умп': 'UMP-45',
+  'умп-45': 'UMP-45',
+  'умп45': 'UMP-45',
+  'бизон': 'PP-Bizon',
+  'пп-бизон': 'PP-Bizon',
+  'пп-19': 'PP-Bizon',
+  'пп19': 'PP-Bizon',
+  'нова': 'Nova',
+  'обрез': 'Sawed-Off',
+  'савед-офф': 'Sawed-Off',
+  'хм1014': 'XM1014',
+  'м249': 'M249',
+  'тек-9': 'Tec-9',
+  'тек9': 'Tec-9',
+  'п250': 'P250',
+  'файв-севен': 'Five-SeveN',
+  'файв': 'Five-SeveN',
+  'цз75': 'CZ75-Auto',
+  'цз-75': 'CZ75-Auto',
+  'цз': 'CZ75-Auto',
+  'чешка': 'CZ75-Auto',
+  'дуал': 'Dual Berettas',
+  'дуалы': 'Dual Berettas',
+  'беретты': 'Dual Berettas',
+  'р8': 'R8 Revolver',
+  'р-8': 'R8 Revolver',
+  'зевс': 'Zeus x27',
+  'зеус': 'Zeus x27',
+  'тезер': 'Zeus x27',
 };
 
 const HOMOGLYPHS = {
@@ -243,12 +306,23 @@ function subAllWord(text, table) {
   return text;
 }
 
-function subAll(text, table) {
+function boundaryOk(low, pos, length, blockDash = false) {
+  const before = pos > 0 ? low[pos - 1] : ' ';
+  const after = pos + length < low.length ? low[pos + length] : ' ';
+  if (/[a-zа-яё0-9]/.test(before) || /[a-zа-яё0-9]/.test(after)) return false;
+  if (blockDash && (before === '-' || after === '-')) return false;
+  return true;
+}
+
+function subAll(text, table, wordBoundary = false) {
   let low = canon(text);
   const entries = Object.entries(table).sort((a, b) => b[0].length - a[0].length);
   for (const [ru, en] of entries) {
-    const pos = low.indexOf(canon(ru));
-    if (pos !== -1) {
+    const key = canon(ru);
+    for (;;) {
+      const pos = low.indexOf(key);
+      if (pos === -1) break;
+      if (wordBoundary && !boundaryOk(low, pos, ru.length)) break;
       text = text.slice(0, pos) + en + text.slice(pos + ru.length);
       low = canon(text);
     }
@@ -260,11 +334,56 @@ function escapeRegex(s) {
   return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
+function replaceBest(text, table, wordBoundary = false, blockDash = false) {
+  const low = canon(text);
+  const entries = Object.entries(table).sort((a, b) => b[0].length - a[0].length);
+  const matches = [];
+  for (const [ru, en] of entries) {
+    const pos = low.indexOf(canon(ru));
+    if (pos === -1) continue;
+    if (wordBoundary && !boundaryOk(low, pos, ru.length, blockDash)) continue;
+    matches.push([pos, pos + ru.length, ru, en]);
+  }
+  if (!matches.length) return text;
+  let best = matches[0];
+  let bi = 0;
+  matches.forEach((m, i) => {
+    if (m[1] - m[0] > best[1] - best[0]) { best = m; bi = i; }
+  });
+  const bestEn = best[3];
+  const segs = [[best[0], best[1], bestEn]];
+  const taken = [[best[0], best[1]]];
+  for (let i = 0; i < matches.length; i++) {
+    if (i === bi) continue;
+    const [s, e, , en] = matches[i];
+    if (s < best[1] && best[0] < e) continue;
+    if (en !== bestEn) continue;
+    if (taken.some(([ts, te]) => s < te && ts < e)) continue;
+    taken.push([s, e]);
+    segs.push([s, e, '']);
+  }
+  segs.sort((a, b) => a[0] - b[0]);
+  let out = '';
+  let prev = 0;
+  for (const [s, e, repl] of segs) {
+    out += text.slice(prev, s) + repl;
+    prev = e;
+  }
+  return out + text.slice(prev);
+}
+
+const RU_MISC = {
+  'нож': '',
+  'перчатки': '',
+  '(после полевых испытаний)': '',
+  'х27': '',
+};
+
 function ruToEn(query, patterns) {
   let q = query.trim().replace(/\s+/g, ' ');
   q = subAll(q, RU_WEAR);
-  q = subAll(q, RU_GUNS);
-  q = subAllWord(q, RU_GUNS_LATIN);
+  q = replaceBest(q, RU_GUNS);
+  q = replaceBest(q, RU_GUNS_LATIN, true, true);
   let lowK = canon(q);
   for (const [ru, en] of Object.entries(RU_KNIVES)) {
     const pos = lowK.indexOf(canon(ru));
@@ -273,7 +392,8 @@ function ruToEn(query, patterns) {
       break;
     }
   }
-  q = subAll(q, patterns || RU_PATTERNS);
+  q = subAll(q, patterns || RU_PATTERNS, true);
+  q = subAll(q, RU_MISC, true);
   return q.trim().replace(/\s+/g, ' ');
 }
 
@@ -281,7 +401,50 @@ function hasCyrillic(s) {
   return /[а-яА-ЯёЁ]/.test(s);
 }
 
+function suggestFromRu(qnorm, table) {
+  const ruTokens = (qnorm.match(/[а-яё]+/gi) || [])
+    .map((t) => t.toLowerCase())
+    .filter((t) => t.length >= 3);
+  if (ruTokens.length === 0) return [];
+  const scores = new Map();
+  for (const [ru, en] of Object.entries(table)) {
+    const ruLow = ru.toLowerCase();
+    let sc = 0;
+    for (const tok of ruTokens) {
+      if (ruLow.includes(tok)) {
+        sc += 3;
+      } else {
+        for (let i = 4; i <= Math.min(6, tok.length); i++) {
+          if (ruLow.includes(tok.slice(0, i))) {
+            sc += 1;
+            break;
+          }
+        }
+      }
+    }
+    if (sc > 0) scores.set(en, (scores.get(en) || 0) + sc);
+  }
+  return [...scores.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 5)
+    .map(([en]) => en);
+}
+
 function normalizeQuery(query, wear, patterns) {
+  if (wear) {
+    const we = String(wear).toLowerCase().trim();
+    if (RU_WEAR_SHORT[we]) {
+      wear = RU_WEAR_SHORT[we];
+    } else {
+      const toks = we.match(/(?<![a-zа-я])[a-zа-я]{1,4}(?![a-zа-я])/g) || [];
+      for (const t of toks) {
+        if (RU_WEAR_SHORT[t]) {
+          wear = RU_WEAR_SHORT[t];
+          break;
+        }
+      }
+    }
+  }
   let q = ruToEn(query, patterns);
   if (!wear) {
     const tokens = q.toLowerCase().match(/(?<![a-zа-я])[a-zа-я]{1,4}(?![a-zа-я])/g) || [];
@@ -441,11 +604,11 @@ function buildEmbed(name, entry) {
 async function doSearch(query, wear) {
   const patterns = await getRuDict();
   const qnorm = normalizeQuery(query, wear, patterns);
-  if (hasCyrillic(qnorm)) return { qnorm, results: [] };
+  if (hasCyrillic(qnorm)) return { qnorm, results: [], suggestions: suggestFromRu(qnorm, patterns) };
   await getIndexText();
   let cs = searchIndex(qnorm);
   const steam = await steamSearch(qnorm);
-  if (cs.length === 0 && steam.length === 0) return { qnorm, results: [] };
+  if (cs.length === 0 && steam.length === 0) return { qnorm, results: [], suggestions: [] };
 
   const results = [];
   const seen = new Set();
@@ -465,9 +628,8 @@ async function doSearch(query, wear) {
       if (results.length >= 4) break;
     }
   }
-  return { qnorm, results };
+  return { qnorm, results, suggestions: [] };
 }
-
 async function handleSkin(interaction, env) {
   const appId = interaction.application_id;
   const token = interaction.token;
@@ -487,11 +649,15 @@ async function handleSkin(interaction, env) {
     }).catch(() => {});
 
   try {
-    const { qnorm, results } = await doSearch(query, wear);
+    const { qnorm, results, suggestions } = await doSearch(query, wear);
     if (results.length === 0) {
-      await patch({
-        content: `Ничего не нашлось по запросу **${qnorm}**. Попробуй точнее, например \`AK-47 | Redline (Field-Tested)\``,
-      });
+      let content = `Ничего не нашлось по запросу **${qnorm}**.`;
+      if (suggestions.length > 0) {
+        content += `\nВозможно, имелось в виду: \`${suggestions.join('`, `')}\`.`;
+      } else {
+        content += ` Попробуй точнее, например \`AK-47 | Redline (Field-Tested)\`.`;
+      }
+      await patch({ content });
       return;
     }
     const embeds = results.map((r) => buildEmbed(r.name, r));

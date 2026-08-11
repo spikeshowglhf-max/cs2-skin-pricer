@@ -580,30 +580,94 @@ RU_GUNS = {
     "ак-47": "AK-47",
     "ак47": "AK-47",
     "калаш": "AK-47",
+    "калашников": "AK-47",
+    "автомат": "AK-47",
     "авп": "AWP",
+    "авик": "AWP",
+    "снайперка": "AWP",
+    "снайперская": "AWP",
     "м4а4": "M4A4",
+    "м4": "M4A4",
+    "м4а1": "M4A1-S",
+    "м4а1-с": "M4A1-S",
+    "м4а1с": "M4A1-S",
+    "м4а1-s": "M4A1-S",
     "пустынный орёл": "Desert Eagle",
     "дезерт игл": "Desert Eagle",
     "десерт игл": "Desert Eagle",
     "дигл": "Desert Eagle",
     "дегл": "Desert Eagle",
     "усп": "USP-S",
-    "снайперка": "AWP",
-    "снайперская": "AWP",
     "глок": "Glock-18",
+    "глок-18": "Glock-18",
     "фамас": "FAMAS",
     "галиль": "Galil AR",
+    "галил": "Galil AR",
     "маг-7": "MAG-7",
+    "маг7": "MAG-7",
     "п90": "P90",
-    "нэгвар": "Negev",
+    "негев": "Negev",
+    "нэгев": "Negev",
     "ск20": "SCAR-20",
+    "скар": "SCAR-20",
+    "скар-20": "SCAR-20",
     "автопушка": "AWP",
+    "ауг": "AUG",
+    "авг": "AUG",
+    "сг553": "SG 553",
+    "сг-553": "SG 553",
+    "ссг": "SSG 08",
+    "ссг08": "SSG 08",
+    "ссг-08": "SSG 08",
+    "г3сг1": "G3SG1",
+    "г3": "G3SG1",
+    "мп9": "MP9",
+    "эмп9": "MP9",
+    "мп7": "MP7",
+    "эмп7": "MP7",
+    "мп5": "MP5-SD",
+    "эмп5": "MP5-SD",
+    "мп5-сд": "MP5-SD",
+    "мп5сд": "MP5-SD",
+    "мак-10": "MAC-10",
+    "мак10": "MAC-10",
+    "макаров": "MAC-10",
+    "умп": "UMP-45",
+    "умп-45": "UMP-45",
+    "умп45": "UMP-45",
+    "бизон": "PP-Bizon",
+    "пп-бизон": "PP-Bizon",
+    "пп-19": "PP-Bizon",
+    "пп19": "PP-Bizon",
+    "нова": "Nova",
+    "обрез": "Sawed-Off",
+    "савед-офф": "Sawed-Off",
+    "хм1014": "XM1014",
+    "м249": "M249",
+    "тек-9": "Tec-9",
+    "тек9": "Tec-9",
+    "п250": "P250",
+    "файв-севен": "Five-SeveN",
+    "файв": "Five-SeveN",
+    "цз75": "CZ75-Auto",
+    "цз-75": "CZ75-Auto",
+    "цз": "CZ75-Auto",
+    "чешка": "CZ75-Auto",
+    "дуал": "Dual Berettas",
+    "дуалы": "Dual Berettas",
+    "беретты": "Dual Berettas",
+    "р8": "R8 Revolver",
+    "р-8": "R8 Revolver",
+    "зевс": "Zeus x27",
+    "зеус": "Zeus x27",
+    "тезер": "Zeus x27",
 }
 
 RU_MISC = {
     "нож": "",
     "перчатки": "",
     "(после полевых испытаний)": "",
+    "х27": "",
 }
 
 RU_GUNS_LATIN = {
@@ -611,21 +675,6 @@ RU_GUNS_LATIN = {
     "deagle": "Desert Eagle",
     "deag": "Desert Eagle",
 }
-
-
-def _sub_all_word(text: str, table: dict[str, str]) -> str:
-    low = _canon(text)
-    for ru, en in sorted(table.items(), key=lambda kv: len(kv[0]), reverse=True):
-        pos = low.find(_canon(ru))
-        if pos == -1:
-            continue
-        before = low[pos - 1] if pos > 0 else " "
-        after = low[pos + len(ru)] if pos + len(ru) < len(low) else " "
-        if before.isalnum() or before == "-" or after.isalnum() or after == "-":
-            continue
-        text = text[:pos] + en + text[pos + len(ru) :]
-        low = _canon(text)
-    return text
 
 RU_DICT_PATH = APP_DIR / "ru_dict.json"
 
@@ -652,33 +701,116 @@ def _canon(s: str) -> str:
     return s.translate(_HOMOGLYPHS).lower()
 
 
-def _sub_all(text: str, table: dict[str, str]) -> str:
+def _boundary_ok(low: str, pos: int, length: int, block_dash: bool = False) -> bool:
+    before = low[pos - 1] if pos > 0 else " "
+    after = low[pos + length] if pos + length < len(low) else " "
+    if before.isalnum() or after.isalnum():
+        return False
+    if block_dash and (before == "-" or after == "-"):
+        return False
+    return True
+
+
+def _sub_all(text: str, table: dict[str, str], word_boundary: bool = False) -> str:
     low = _canon(text)
     for ru, en in sorted(table.items(), key=lambda kv: len(kv[0]), reverse=True):
-        pos = low.find(_canon(ru))
-        if pos != -1:
+        key = _canon(ru)
+        while True:
+            pos = low.find(key)
+            if pos == -1:
+                break
+            if word_boundary and not _boundary_ok(low, pos, len(ru)):
+                break
             text = text[:pos] + en + text[pos + len(ru) :]
             low = _canon(text)
     return text
 
 
+def _replace_best(text: str, table: dict[str, str], word_boundary: bool = False, block_dash: bool = False) -> str:
+    low = _canon(text)
+    matches = []
+    for ru, en in sorted(table.items(), key=lambda kv: len(kv[0]), reverse=True):
+        pos = low.find(_canon(ru))
+        if pos == -1:
+            continue
+        if word_boundary and not _boundary_ok(low, pos, len(ru), block_dash):
+            continue
+        matches.append((pos, pos + len(ru), ru, en))
+    if not matches:
+        return text
+    best = max(matches, key=lambda m: m[1] - m[0])
+    best_span = (best[0], best[1])
+    best_en = best[3]
+    segs = [(*best_span, best_en)]
+    taken = [best_span]
+    for s, e, ru, en in matches:
+        if (s, e) == best_span:
+            continue
+        if s < best_span[1] and best_span[0] < e:
+            continue
+        if en != best_en:
+            continue
+        if any(s < te and ts < e for ts, te in taken):
+            continue
+        taken.append((s, e))
+        segs.append((s, e, ""))
+    segs.sort(key=lambda t: t[0])
+    out = ""
+    prev = 0
+    for s, e, repl in segs:
+        out += text[prev:s] + repl
+        prev = e
+    return out + text[prev:]
+
+
 def ru_to_en(query: str) -> str:
     q = re.sub(r"\s+", " ", query.strip())
     translated = _sub_all(q, RU_WEAR)
-    translated = _sub_all(translated, RU_GUNS)
-    translated = _sub_all_word(translated, RU_GUNS_LATIN)
+    translated = _replace_best(translated, RU_GUNS)
+    translated = _replace_best(translated, RU_GUNS_LATIN, word_boundary=True, block_dash=True)
     low = _canon(translated)
     for ru, en in sorted(RU_KNIVES.items(), key=lambda kv: len(kv[0]), reverse=True):
         pos = low.find(_canon(ru))
         if pos != -1:
             translated = translated[:pos] + en + translated[pos + len(ru) :]
             break
-    translated = _sub_all(translated, ALL_PATTERNS)
-    translated = _sub_all(translated, RU_MISC)
+    translated = _sub_all(translated, ALL_PATTERNS, word_boundary=True)
+    translated = _sub_all(translated, RU_MISC, word_boundary=True)
     return re.sub(r"\s+", " ", translated).strip()
 
 
+def suggest_from_ru(qnorm: str, table: dict[str, str]) -> list[str]:
+    ru_tokens = [t.lower() for t in re.findall(r"[а-яё]+", qnorm, re.IGNORECASE) if len(t) >= 3]
+    if not ru_tokens:
+        return []
+    scores: dict[str, int] = {}
+    for ru, en in table.items():
+        ru_low = ru.lower()
+        sc = 0
+        for tok in ru_tokens:
+            if tok in ru_low:
+                sc += 3
+            else:
+                for i in range(4, min(6, len(tok)) + 1):
+                    if tok[:i] in ru_low:
+                        sc += 1
+                        break
+        if sc > 0:
+            scores[en] = scores.get(en, 0) + sc
+    return [en for en, _ in sorted(scores.items(), key=lambda kv: kv[1], reverse=True)[:5]]
+
+
 def normalize_query(query: str, wear: str | None) -> str:
+    if wear:
+        we = str(wear).strip().lower()
+        if we in RU_WEAR_SHORT:
+            wear = RU_WEAR_SHORT[we]
+        else:
+            toks = re.findall(r"(?<![a-zа-я])[a-zа-я]{1,4}(?![a-zа-я])", we)
+            for t in toks:
+                if t in RU_WEAR_SHORT:
+                    wear = RU_WEAR_SHORT[t]
+                    break
     translated = ru_to_en(query)
     q = re.sub(r"\s+", " ", translated.strip())
     if not wear:

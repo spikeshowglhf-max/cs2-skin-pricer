@@ -1,9 +1,13 @@
 """Build ru_dict.json: Russian names for ALL CS2 skin patterns.
 
-Source: official csgo_english.txt (SteamDatabase/GameTracking-CS2) for the full
-list of EN pattern names, then Google Translate (gtx, no key) en->ru for each
-unique pattern. The weapon word is kept in English and translated at runtime
-by the curated RU_GUNS/RU_KNIVES tables.
+Pattern sources (union):
+  1. CS.Market prices/RUB.json — live list of every skin on the market,
+     so brand-new skins are picked up automatically as soon as they appear.
+  2. Official csgo_english.txt (SteamDatabase/GameTracking-CS2) — canonical
+     pattern names.
+Each unique pattern is translated en->ru via Google Translate (gtx, no key).
+The weapon word is kept in English and translated at runtime by the curated
+RU_GUNS/RU_KNIVES tables.
 
 Output: {"RU pattern": "EN pattern", ...} — used by price_checker.py (sync)
 and worker.js (Cloudflare, fetched from GitHub raw).
@@ -26,9 +30,16 @@ CSGO_ENGLISH_URL = (
     "https://raw.githubusercontent.com/SteamDatabase/GameTracking-CS2/"
     "master/game/csgo/pak01_dir/resource/csgo_english.txt"
 )
+CSMARKET_URL = "https://market.csgo.com/api/v2/prices/RUB.json"
 
 GTX_URL = "https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=ru&dt=t&q={q}"
 
+PREFIXES = ("StatTrak™ ", "Souvenir ", "★ ")
+
+NON_SKIN_WORDS = (
+    "music kit", "sticker", "charm", "graffiti", "agent", "patch",
+    "souvenir package", "collectible", "case", "capsule", "emblem",
+)
 
 LOC_KEY_RE = re.compile(r'^\s*"([^"]+)"\s+"([^"]*)"\s*$')
 
@@ -57,6 +68,33 @@ def parse_paint_kits(text: str) -> set[str]:
     return patterns
 
 
+def parse_csmarket(data: list) -> set[str]:
+    patterns: set[str] = set()
+    for item in data:
+        if isinstance(item, dict):
+            name = str(item.get("market_hash_name") or "")
+        elif isinstance(item, (list, tuple)) and item:
+            name = str(item[0])
+        else:
+            continue
+        if " | " not in name:
+            continue
+        for prefix in PREFIXES:
+            if name.startswith(prefix):
+                name = name[len(prefix) :]
+                break
+        weapon, pattern = name.split(" | ", 1)
+        weapon = weapon.strip()
+        pattern = re.sub(r"\s*\([^)]*\)\s*$", "", pattern).strip()
+        if not pattern:
+            continue
+        weapon_low = weapon.lower()
+        if "(" in weapon or any(w in weapon_low for w in NON_SKIN_WORDS):
+            continue
+        patterns.add(pattern)
+    return patterns
+
+
 def translate_one(pattern: str) -> str | None:
     url = GTX_URL.format(q=urllib.parse.quote(pattern))
     for attempt in range(3):
@@ -75,9 +113,18 @@ def translate_one(pattern: str) -> str | None:
 
 
 def main() -> int:
-    print("fetching csgo_english.txt ...")
-    text = fetch(CSGO_ENGLISH_URL)
-    patterns = parse_paint_kits(text)
+    patterns: set[str] = set()
+    try:
+        print("fetching csgo_english.txt ...")
+        patterns |= parse_paint_kits(fetch(CSGO_ENGLISH_URL))
+    except OSError as exc:
+        print(f"localization fetch failed: {exc}")
+    try:
+        print("fetching CS.Market prices ...")
+        data = json.loads(fetch(CSMARKET_URL))
+        patterns |= parse_csmarket(data.get("items", []))
+    except (OSError, ValueError) as exc:
+        print(f"csmarket fetch failed: {exc}")
     print(f"unique patterns: {len(patterns)}")
 
     ru_to_en: dict[str, str] = {}
