@@ -1,0 +1,4 @@
+name = "cs2-skin-pricer"
+main = "worker.js"
+workers_dev = true
+compatibility_date = "2025-01-01"
