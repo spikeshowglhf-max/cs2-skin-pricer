@@ -1,0 +1,197 @@
+:root {
+  --bg: #0d1117;
+  --bg-card: #161b22;
+  --bg-input: #0d1117;
+  --border: #30363d;
+  --text: #e6edf3;
+  --text-dim: #8b949e;
+  --accent: #f0883e;
+  --accent-hover: #fda257;
+  --green: #3fb950;
+  --red: #f85149;
+  --shadow: 0 4px 24px rgba(0, 0, 0, 0.45);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+  min-height: 100vh;
+}
+
+header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 24px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-card);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.logo {
+  font-size: 20px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.logo-badge {
+  background: linear-gradient(135deg, #f0883e, #c95e1f);
+  color: #fff;
+  padding: 3px 9px;
+  border-radius: 6px;
+  font-size: 14px;
+  letter-spacing: 1px;
+}
+
+.status { font-size: 13px; color: var(--text-dim); }
+
+.status.ok { color: var(--green); }
+.status.err { color: var(--red); }
+
+main { max-width: 880px; margin: 0 auto; padding: 24px 16px 64px; }
+
+.search-section { display: flex; gap: 10px; margin-bottom: 24px; }
+
+#search {
+  flex: 1;
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text);
+  padding: 12px 16px;
+  font-size: 16px;
+  outline: none;
+}
+
+#search:focus { border-color: var(--accent); }
+
+.btn-primary {
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 12px 22px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.btn-primary:hover { background: var(--accent-hover); }
+.btn-primary:disabled { opacity: 0.6; cursor: wait; }
+
+.results { display: flex; flex-direction: column; gap: 12px; }
+
+.item-card {
+  display: flex;
+  gap: 14px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px;
+  box-shadow: var(--shadow);
+  align-items: center;
+}
+
+.item-card img {
+  width: 56px;
+  height: 56px;
+  object-fit: contain;
+  border-radius: 6px;
+  background: #000;
+  flex-shrink: 0;
+}
+
+.item-info { flex: 1; min-width: 0; }
+
+.item-name { font-weight: 600; margin-bottom: 4px; word-break: break-word; }
+
+.item-prices { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px; }
+
+.price-tag {
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 4px 10px;
+  font-size: 13px;
+}
+
+.price-tag b { color: #fff; }
+
+.price-tag .net { color: var(--green); }
+
+.price-tag .fee { color: var(--text-dim); font-size: 11px; }
+
+.ribbon {
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 4px 10px;
+  font-size: 12px;
+  color: var(--text-dim);
+  align-self: flex-start;
+  flex-shrink: 0;
+}
+
+.ribbon.fresh { color: var(--green); border-color: var(--green); }
+
+.no-results {
+  text-align: center;
+  color: var(--text-dim);
+  padding: 32px;
+  border: 1px dashed var(--border);
+  border-radius: 10px;
+}
+
+.info-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 12px;
+  margin-top: 32px;
+}
+
+.info-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px;
+  font-size: 13.5px;
+  color: var(--text-dim);
+  line-height: 1.5;
+}
+
+.info-title {
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 6px;
+  font-size: 15px;
+}
+
+code {
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-size: 12px;
+}
+
+.spinner {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border: 2px solid var(--border);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  vertical-align: -2px;
+  margin-right: 6px;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }

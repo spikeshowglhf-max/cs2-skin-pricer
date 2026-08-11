@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CS2 Skin Pricer</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔫</text></svg>">
+</head>
+<body>
+  <header>
+    <div class="logo"><span class="logo-badge">CS2</span> Skin Pricer</div>
+    <div class="status" id="status">Загрузка прайса…</div>
+  </header>
+
+  <main>
+    <section class="search-section">
+      <input type="text" id="search" placeholder="Например: AK-47 | Redline (Field-Tested)" autocomplete="off" autofocus>
+      <button id="search-btn" class="btn-primary">Найти</button>
+    </section>
+
+    <section id="results" class="results"></section>
+
+    <section class="info-grid">
+      <div class="info-card">
+        <div class="info-title">Дискорд-бот</div>
+        <p>Запускай проверку из GitHub (даже с телефона): <b>Actions</b> → <b>CS2 Skin Pricer</b> → <b>Run workflow</b> → введи скин. Цена придёт в Discord.</p>
+      </div>
+      <div class="info-card">
+        <div class="info-title">Авто-слежение</div>
+        <p>Скины из <code>watchlist.json</code> проверяются каждый час, изменения цен приходят в Discord.</p>
+      </div>
+      <div class="info-card">
+        <div class="info-title">Цены</div>
+        <p>CS.Market — весь прайс, Steam — по поиску. «На руки» = после комиссии площадки. Обновление прайса ~раз в час.</p>
+      </div>
+    </section>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>

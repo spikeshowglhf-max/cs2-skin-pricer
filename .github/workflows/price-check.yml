@@ -1,0 +1,78 @@
+name: CS2 Skin Pricer
+
+on:
+  schedule:
+    - cron: "0 * * * *"
+  workflow_dispatch:
+    inputs:
+      action:
+        description: "Что сделать"
+        required: true
+        default: check-watchlist
+        type: choice
+        options:
+          - check-watchlist
+          - refresh-prices
+          - lookup-skin
+      query:
+        description: "Название скина (для lookup-skin)"
+        required: false
+        type: string
+        default: ""
+
+permissions:
+  contents: write
+
+concurrency:
+  group: cs2-skin-pricer
+  cancel-in-progress: false
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    env:
+      DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
+      - name: Determine action
+        id: action
+        run: |
+          ACTION="${{ github.event.inputs.action || 'check-watchlist' }}"
+          QUERY="${{ github.event.inputs.query || '' }}"
+          echo "action=$ACTION" >> "$GITHUB_OUTPUT"
+          echo "query=$QUERY" >> "$GITHUB_OUTPUT"
+
+      - name: Run price checker
+        run: |
+          ACTION="${{ steps.action.outputs.action }}"
+          QUERY="${{ steps.action.outputs.query }}"
+          if [ "$ACTION" = "refresh-prices" ]; then
+            python price_checker.py refresh
+          elif [ "$ACTION" = "lookup-skin" ] && [ -n "$QUERY" ]; then
+            python price_checker.py lookup --query "$QUERY"
+          else
+            python price_checker.py watch
+          fi
+
+      - name: Commit price data
+        run: |
+          if git diff --quiet -- prices.json state.json; then
+            echo "No changes to save."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -f prices.json state.json
+          git commit -m "Update CS2 prices and notifier state"
+          git push || {
+            git fetch origin main
+            git rebase origin/main || exit 0
+            git push || exit 0
+          }
