@@ -1,19 +1,19 @@
 {
   "prices": {
     "AK-47 | Redline (Field-Tested)": {
-      "rub": 2249.61,
-      "updated_at": "2026-10-27T14:05:58.270931+00:00",
-      "usd": 27.225,
-      "steam_usd": 31.6,
+      "rub": 2216.59,
+      "updated_at": "2026-10-27T19:54:56.529564+00:00",
+      "usd": 26.2,
+      "steam_usd": 31.55,
       "image": "https://community.fastly.steamstatic.com/economy/image/i0CoZ81Ui0m-9KwlBY1L_18myuGuq1wfhWSaZgMttyVfPaERSR0Wqmu7LAocGIGz3UqlXOLrxM-vMGmW8VNxu5Dx60noTyLwlcK3wiFO0POlPPNSI_-RHGavzOtyufRkASq2lkxx4W-HnNyqJC3FZwYoC5p0Q7FfthW6wdWxPu-371Pdit5HnyXgznQeHYY5wyA"
     },
     "AWP | Asiimov (Field-Tested)": {
-      "rub": 8400.0,
-      "updated_at": "2026-10-27T14:05:58.572887+00:00",
-      "usd": 101.657,
-      "steam_usd": 134.91,
+      "rub": 8459.0,
+      "updated_at": "2026-10-27T19:54:57.212748+00:00",
+      "usd": 102.421,
+      "steam_usd": 124.91,
       "image": "https://community.fastly.steamstatic.com/economy/image/i0CoZ81Ui0m-9KwlBY1L_18myuGuq1wfhWSaZgMttyVfPaERSR0Wqmu7LAocGIGz3UqlXOLrxM-vMGmW8VNxu5Dx60noTyLwiYbf_jdk7uW-V6V-Kf2cGFidxOp_pewnF3nhxEt0sGnSzN76dH3GOg9xC8FyEORftRe-x9PuYurq71bW3d8UnjK-0H0YSTpMGQ"
     }
   },
-  "updated_at": "2026-10-27T14:05:58.105243+00:00"
+  "updated_at": "2026-10-27T19:54:56.291760+00:00"
 }
